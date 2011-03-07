@@ -1,0 +1,50 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper,top=3cm,bottom=3cm]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage{polski}
+
+\usepackage{xltxtra}
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont{Gentium}
+%\setsansfont[Scale=MatchLowercase]{Gill Sans}
+%\setmonofont[Scale=MatchLowercase]{Monaco}
+\linespread{1.25}
+
+\usepackage{fancyvrb}
+\usepackage{relsize}
+\usepackage{alltt}
+
+\usepackage[pdfborder={0 0 0}]{hyperref}
+
+\DefineVerbatimEnvironment%
+  {SmallVerbatim}%
+  {Verbatim}{fontsize=\relsize{-1},numbers=left,numbersep=-10pt,frame=lines,tabsize=4}
+
+\newcommand{\prog}[1]{\texttt{#1}}
+\newcommand{\flag}[1]{\textbf{\prog{#1}}}
+
+\begin{document}
+
+%%fakesection{Tytuł}
+\title{ 
+  Interpolacja funkcjami sklejanymi\\
+  {\normalsize Specyfikacja implementacyjna projektu nr 1}\\\vspace{-12pt}
+  {\normalsize z przedmiotu \emph{Języki i metody programowania 2}}
+}
+\author{
+  Tomasz Cudziło\\
+  {\small EE PW, 211552}
+}
+\date{\today}
+\maketitle
+
+\section*{Zadanie}
+\label{sec:zadanie}
+
+Napisać program wyznaczający współczynniki funkcji sklejanych trzeciego stopnia
+aproksymujących zadany ciąg danych pomiarowych.
+
+\vspace{24pt}
+
+\end{document}
