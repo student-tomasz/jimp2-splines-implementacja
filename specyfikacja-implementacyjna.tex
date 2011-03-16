@@ -1,28 +1,28 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[a4paper,top=3cm,bottom=3cm]{geometry}
 
-\usepackage[T1]{fontenc}
 \usepackage{polski}
-
 \usepackage{xltxtra}
-\defaultfontfeatures{Mapping=tex-text}
-\setromanfont{Gentium}
-%\setsansfont[Scale=MatchLowercase]{Gill Sans}
-%\setmonofont[Scale=MatchLowercase]{Monaco}
-\linespread{1.25}
 
 \usepackage{fancyvrb}
 \usepackage{relsize}
 \usepackage{alltt}
-
+\usepackage{amsfonts}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 
+%% tweak fonts
+\defaultfontfeatures{Mapping=tex-text}
+\setromanfont{Charis SIL}
+%\setsansfont[Scale=MatchLowercase]{Gill Sans}
+\setmonofont[Scale=MatchLowercase]{Menlo}
+\linespread{1.25}
+
+%% define custom commands and environments
 \DefineVerbatimEnvironment%
   {SmallVerbatim}%
   {Verbatim}{fontsize=\relsize{-1},numbers=left,numbersep=-10pt,frame=lines,tabsize=4}
-
-\newcommand{\prog}[1]{\texttt{#1}}
-\newcommand{\flag}[1]{\textbf{\prog{#1}}}
+\newcommand{\p}[1]{\texttt{#1}}
+\newcommand{\flag}[1]{\textbf{\p{#1}}}
 
 \begin{document}
 
@@ -30,7 +30,7 @@
 \title{ 
   Interpolacja funkcjami sklejanymi\\
   {\normalsize Specyfikacja implementacyjna projektu nr 1}\\\vspace{-12pt}
-  {\normalsize z przedmiotu \emph{Języki i metody programowania 2}}
+  {\normalsize z przedmiotu \emph{Języki i metody pramowania 2}}
 }
 \author{
   Tomasz Cudziło\\
@@ -42,9 +42,189 @@
 \section*{Zadanie}
 \label{sec:zadanie}
 
-Napisać program wyznaczający współczynniki funkcji sklejanych trzeciego stopnia
+Napisać pram wyznaczający współczynniki funkcji sklejanych trzeciego stopnia
 aproksymujących zadany ciąg danych pomiarowych.
 
 \vspace{24pt}
+
+\section{Moduły}
+pram jest podzielony na cztery moduły współpracujące ze sobą: \p{CLI},
+\p{IO}, \p{Interpolation}, \p{Math}. Główna logika znajduje się w~
+
+\subsection{Moduł \p{CLI}}
+Składa się z~plików \p{options.h}, \p{cli.h} i~\p{cli.c}. Udostępnia strukturę
+\p{options} i~funkcję \p{cli\_parse()}.
+\begin{SmallVerbatim}
+    /* file: options.h */
+    struct {
+      char *in_filename;
+      char *out_filename;
+      int force;
+      int gnuplot;
+      int quiet;
+    } *options = NULL;
+\end{SmallVerbatim}
+Ma prawo istnieć tylko jedna instancja struktury \p{options} i~jest ona
+globalna. Obiektowo \p{options} byłyby klasą zaimplemetowaną jako singleton.
+\begin{SmallVerbatim}
+    /* file: cli.h */
+    void cli_parse(char **argv, int argc);
+\end{SmallVerbatim}
+Instancja \p{options} jest inicjalizowana w~funkcji \p{cli\_parse()} i~nie jest
+zmieniana w~pozostałych częściach programu.
+
+Pola \p{force}, \p{gnuplot} i~\p{quiet} ustawiane są na \p{1} lub \p{0}
+zależnie od wartości domyślnych i~flag podanych przez użytkownika
+w~argumentach~linii komend.
+
+Wskaźniki \p{in\_filename} i~\p{out\_filename} wskazują na string ze~względną
+ściężką odpowiednio do pliku wejściowego i~wyjściowego. Jeśli pliki nie
+zostały podane, wskaźniki są \p{NULL}. Dla \p{in\_filename == NULL} oznacza to
+wczytywanie danych z~wejścia standardowego. Specyfikacja funckjonalna opisuje
+zależności między nazwami plików tworzonych przez program --- co najwyżej jeden
+z~tych wskaźników może być \p{NULL}.
+
+\subsection{Moduł \p{IO}}
+
+Moduł \p{IO} dostarcza funkcji do obsługi plików związanych z~programem.
+Zawiera pliki \p{io.h} i~\p{io.c}. Formaty obsługiwanych plików i~przypadki ich
+tworzenia są opisane w~specyfikacji funkcjonalnej. Wykorzystuje struktury
+zdefiniowane w~module \p{Math} (par.~\ref{sec:modul_math}).
+\begin{SmallVerbatim}
+    /* file: io.h */
+    point_t *io_read();
+    int io_write(point_t **nodes, polynomial_t **splines);
+    void io_log(const char *msg);
+    void io_error(const char *msg);
+\end{SmallVerbatim}
+\begin{description}
+  \item[\p{io\_read()}] \hfill \\
+    Wczytuje i~parsuje dane z~pliku lub z~\p{stdin}. Zwraca wskaźnik na
+    początek dynamicznie zaalokowanej tablicy wskaźników na punkty lub \p{NULL}
+    w~przypadku niepowodzenia. Sortuje rosnąco punkty według ich współrzędnej
+    $x$.
+  \item[\p{io\_write()}] \hfill \\
+    Otrzymuje tablicę wskaźników na punkty wyznaczające przedziały oraz tablicę
+    wskaźników na wielomiany funkcji sklejanej. Kolejność wielomianów odpowiada
+    kolejności przedziałów w~tablicy węzłów. Otrzymane dane wypisuje do pliku
+    wyjściowego i~do pliku dla \p{gnuplot}. Zwraca \p{0} w~przypadku
+    niepowodzenia zapisu do pliku.
+  \item[\p{io\_log()}] \hfill \\
+    Wypisuje wiadomość informacyjną do pliku z~logiem.
+  \item[\p{io\_error()}] \hfill \\
+    Wypisuje wiadomości o~błędach. Działa identycznie jak \p{io\_log()}.
+\end{description}
+
+\subsection{Moduł \p{Math}}
+\label{sec:modul_math}
+
+Jest modułem pomocniczym z~podstawowymi narzędziami matematycznymi, których nie
+ma w~bibliotece standardowej.
+
+\subsubsection{Pliki \p{point.h} i~\p{point.c}}
+Daje prostą reprezantację punktu na $\mathbb{R}^{2}$ oraz konsturktor i~destruktor.
+\begin{SmallVerbatim}
+    /* file: point.h */
+    typedef struct point_s {
+      double x;
+      double y;
+    } point_t;
+    
+    point_t *point_new(double x, double y);
+    void point_free(point_t *p);
+\end{SmallVerbatim}
+
+\subsubsection{Pliki \p{polynomial.h} i~\p{polynomial.c}}
+Definiuje strukturę odpowiadającą funkcji wielomianowej.
+\begin{SmallVerbatim}
+    /* file: polynomial.h */
+    typedef struct polynomial_s {
+      double *coeffs;
+      int degree;
+    } polynomial_t;
+    
+    polynomial_t *polynomial_new(double *coeffs, int degree);
+    void polynomial_free(polynomial_t *p);
+    polynomial_t *polynomial_derivate(polynomial_t *p);
+\end{SmallVerbatim}
+\p{coeffs} jest dynamicznie alokowaną tablicą liczb rzeczywistych
+o~$\p{degree}+1$ elementach. Każdy element \p{coeffs} odpowiada współczynnikowi
+zmiennej w~potędze równej indeksowi tego elementu. To znaczy dla wielomianu
+\ref{eqn:poly} struktura posiada tablicę \ref{eqn:array}:
+\begin{eqnarray}
+  4.4 \cdot x^{3} +~1.2 \cdot x^2 - 3.1 \cdot x + 0.7 \label{eqn:poly}\\
+  {\tt\left[ 0.7,\quad -3.1,\quad 1.2, \quad 4.4 \right]} \label{eqn:array}
+\end{eqnarray}
+Funkcja \p{polynomial\_derivate()} tworzy nowy wielomian będący funkcją
+pochodną wielomianu przekazanego w~argumencie.
+
+\subsubsection{Pliki \p{matrix.h} i~\p{matrix.c}}
+Zawiera reprezentację macierzy i~metodę rozwiązywania układów równań metodą
+eliminacji Gaussa. Jeśli te proste rozwiązania okażą się za wolne, zostaną
+zoptymalizowane. \emph{Premature optimization is the root of all evil.}
+\begin{SmallVerbatim}
+    /* file: matrix.h */
+    typedef struct matrix_s {
+      double *t;
+      int r;
+      int c;
+    } matrix_t;
+    
+    matrix_t *matrix_new(double *t, int r, int c);
+    void matrix_free(matrix_t *m);
+    matrix_t *matrix_gauss(matrix_t *A, matrix_t *b);
+\end{SmallVerbatim}
+
+\subsection{Moduł \p{Spline}}
+
+Moduł ma dwa pliki \p{spline.h} i~\p{spline.c}. Zawiera algorytm interpolacji.
+\begin{SmallVerbatim}
+    /* file: spline.h */
+    polynomial_t **spline_interpolate(point_t **nodes);
+\end{SmallVerbatim}
+Funkcja \p{spline\_interpolate()} otrzymuje tablicę wskaźników na punkty podane
+przez użytkownika. Zwraca tablicę wskaźników na wielomiany tworzące szukaną
+funkcję sklejaną. Funkcja zakłada, że punkty w~\p{nodes} są posortowane
+rosnąco i~zwraca wielomiany w~kolejności odpowiadającej przedziałom
+z~\p{nodes}.
+
+Algorytm interpolacji sprowadza się do rozwiązania układu równań z~założenia
+równości wielomianów i~ich pochodnych na krańcach przedziałów zdefiniowanych
+przez punkty.
+\begin{SmallVerbatim}
+    /* file: pseudokod spline.c */
+    spline_interpolate(punkty)
+    {
+      n = liczba punktow
+      A = macierz kwadratowa o wymiarze n-1
+      b = macierz o n-1 wierszach i 1 kolumnie
+      
+      uzupelnij macierze A i b z założeń:
+      * równości wielomianów w punktach granicznych przedziałów
+      * równości pochodnych 1- i 2-stopnia tych wielomianów w tych samych punktach
+      
+      k = matrix_gauss(A, b)
+      wielomiany = wyciągnij z k współczynniki poszczególnych wielomianów
+      
+      return wielomiany
+    }
+\end{SmallVerbatim}
+
+\section{Integracja}
+
+Program nie jest złożony. Całość logiki mieści się w~\p{main.c}:
+\begin{SmallVerbatim}
+    /* file: pseudokod main.c */
+    main()
+    {
+      globalne_opcje = cli_parse();
+
+      punkty = io_read();
+      wielomiany = spline_interpolate();
+      io_write(punkty, wielomiany);
+      
+      return sukces;
+    }
+\end{SmallVerbatim}
 
 \end{document}
