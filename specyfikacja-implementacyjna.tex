@@ -30,7 +30,7 @@
 \title{ 
   Interpolacja funkcjami sklejanymi\\
   {\normalsize Specyfikacja implementacyjna projektu nr 1}\\\vspace{-12pt}
-  {\normalsize z przedmiotu \emph{Języki i metody pramowania 2}}
+  {\normalsize z przedmiotu \emph{Języki i metody programowania 2}}
 }
 \author{
   Tomasz Cudziło\\
@@ -65,7 +65,7 @@ Składa się z~plików \p{options.h}, \p{cli.h} i~\p{cli.c}. Udostępnia struktu
     } *options = NULL;
 \end{SmallVerbatim}
 Ma prawo istnieć tylko jedna instancja struktury \p{options} i~jest ona
-globalna. Obiektowo \p{options} byłyby klasą zaimplemetowaną jako singleton.
+globalna. Obiektowo \p{options} byłyby klasą zaimplementowaną jako singleton.
 \begin{SmallVerbatim}
     /* file: cli.h */
     void cli_parse(char **argv, int argc);
@@ -80,7 +80,7 @@ w~argumentach~linii komend.
 Wskaźniki \p{in\_filename} i~\p{out\_filename} wskazują na string ze~względną
 ściężką odpowiednio do pliku wejściowego i~wyjściowego. Jeśli pliki nie
 zostały podane, wskaźniki są \p{NULL}. Dla \p{in\_filename == NULL} oznacza to
-wczytywanie danych z~wejścia standardowego. Specyfikacja funckjonalna opisuje
+wczytywanie danych z~wejścia standardowego. Specyfikacja funkcjonalna opisuje
 zależności między nazwami plików tworzonych przez program --- co najwyżej jeden
 z~tych wskaźników może być \p{NULL}.
 
@@ -122,7 +122,7 @@ Jest modułem pomocniczym z~podstawowymi narzędziami matematycznymi, których n
 ma w~bibliotece standardowej.
 
 \subsubsection{Pliki \p{point.h} i~\p{point.c}}
-Daje prostą reprezantację punktu na $\mathbb{R}^{2}$ oraz konsturktor i~destruktor.
+Daje prostą reprezentację punktu na $\mathbb{R}^{2}$ oraz konstruktor i~destruktor.
 \begin{SmallVerbatim}
     /* file: point.h */
     typedef struct point_s {
@@ -195,18 +195,18 @@ przez punkty.
     /* file: pseudokod spline.c */
     spline_interpolate(punkty)
     {
-      n = liczba punktow
-      A = macierz kwadratowa o wymiarze n-1
-      b = macierz o n-1 wierszach i 1 kolumnie
+      n = liczba punktow;
+      A = macierz kwadratowa o wymiarze n-1;
+      b = macierz o n-1 wierszach i 1 kolumnie;
       
       uzupelnij macierze A i b z założeń:
-      * równości wielomianów w punktach granicznych przedziałów
-      * równości pochodnych 1- i 2-stopnia tych wielomianów w tych samych punktach
+      * równości wielomianów w punktach granicznych przedziałów;
+      * równości pochodnych 1- i 2-stopnia tych wielomianów w tych samych punktach;
       
-      k = matrix_gauss(A, b)
-      wielomiany = wyciągnij z k współczynniki poszczególnych wielomianów
+      k = matrix_gauss(A, b);
+      wielomiany = wyciągnij z k współczynniki poszczególnych wielomianów;
       
-      return wielomiany
+      return wielomiany;
     }
 \end{SmallVerbatim}
 
